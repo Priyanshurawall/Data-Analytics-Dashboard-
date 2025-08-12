@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analytics Dashboard - Priyanshu Rawal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-card: #1a1a1a;
+            --bg-card-hover: #222222;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --border: #27272a;
+            --shadow: rgba(0, 0, 0, 0.5);
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .time-range {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            background: var(--bg-card);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* Main Dashboard */
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            gap: 2rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-1);
+        }
+
+        .stat-card.green::before { background: var(--gradient-4); }
+        .stat-card.orange::before { background: var(--gradient-2); }
+        .stat-card.blue::before { background: var(--gradient-3); }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon.purple { background: rgba(139, 92, 246, 0.2); }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.2); }
+        .stat-icon.orange { background: rgba(245, 158, 11, 0.2); }
+        .stat-icon.blue { background: rgba(59, 130, 246, 0.2); }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .trend-up { color: var(--accent-green); }
+        .trend-down { color: var(--accent-red); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* Chart Cards */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Table */
+        .table-section {
+            grid-column: 1 / -1;
+        }
+
+        .data-table {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .search-input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            flex: 1;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .filter-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        tbody tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* Real-time indicator */
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .table-controls {
+                flex-direction: column;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Chart container styling */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .progress-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .progress-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            min-width: 80px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            margin: 0 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease-in-out;
+        }
+
+        .progress-value {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            min-width: 40px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Data Analytics Dashboard</div>
+            <div class="header-controls">
+                <div class="live-indicator">
+                    <div class="live-dot"></div>
+                    Live Data
+                </div>
+                <div class="time-range">Last 30 days</div>
+                <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card purple">
+                <div class="stat-header">
+                    <div class="stat-icon purple">👥</div>
+                    <div class="stat-trend trend-up">
+                        ↑ 12.5%
+                    </div>
+                </div>
+                <div class="stat-value" id="totalUsers">24,563</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+
+            <div class="stat-card green">
+                <div class="stat-header">
+                    <div class="stat-icon green">💰</div>
+                    <div class="stat-trend trend-up">
+                        ↑ 8.2%
+                    </div>
+                </div>
+                <div class="stat-value" id="totalRevenue">$89,432</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+
+            <div class="stat-card orange">
+                <div class="stat-header">
+                    <div class="stat-icon orange">📊</div>
+                    <div class="stat-trend trend-down">
+                        ↓ 3.1%
+                    </div>
+                </div>
+                <div class="stat-value" id="avgSessionTime">4.2m</div>
+                <div class="stat-label">Avg Session Time</div>
+            </div>
+
+            <div class="stat-card blue">
+                <div class="stat-header">
+                    <div class="stat-icon blue">🎯</div>
+                    <div class="stat-trend trend-up">
+                        ↑ 15.7%
+                    </div>
+                </div>
+                <div class="stat-value" id="conversionRate">3.8%</div>
+                <div class="stat-label">Conversion Rate</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <!-- Main Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">Revenue Analytics</h3>
+                        <p class="chart-subtitle">Monthly revenue trends and projections</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Side Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">Traffic Sources</h3>
+                        <p class="chart-subtitle">User acquisition channels</p>
+                    </div>
+                </div>
+                <div class="progress-bars">
+                    <div class="progress-item">
+                        <div class="progress-label">Organic</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 65%; background: var(--accent-green);"></div>
+                        </div>
+                        <div class="progress-value">65%</div>
+                    </div>
+                    <div class="progress-item">
+                        <div class="progress-label">Social</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 25%; background: var(--accent-blue);"></div>
+                        </div>
+                        <div class="progress-value">25%</div>
+                    </div>
+                    <div class="progress-item">
+                        <div class="progress-label">Paid</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 15%; background: var(--accent-purple);"></div>
+                        </div>
+                        <div class="progress-value">15%</div>
+                    </div>
+                    <div class="progress-item">
+                        <div class="progress-label">Direct</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 35%; background: var(--accent-orange);"></div>
+                        </div>
+                        <div class="progress-value">35%</div>
+                    </div>
+                    <div class="progress-item">
+                        <div class="progress-label">Email</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 20%; background: var(--accent-pink);"></div>
+                        </div>
+                        <div class="progress-value">20%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-section">
+            <div class="data-table">
+                <div class="table-header">
+                    <h3 class="table-title">Recent Transactions</h3>
+                    <div class="table-controls">
+                        <input type="text" class="search-input" placeholder="Search transactions..." id="searchInput">
+                        <select class="filter-select" id="statusFilter">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="pending">Pending</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Channel</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Sample data
+        const sampleTransactions = [
+            { id: 'TXN-001', customer: 'John Smith', amount: 1250.00, status: 'active', date: '2024-01-15', channel: 'Web' },
+            { id: 'TXN-002', customer: 'Emma Johnson', amount: 850.75, status: 'pending', date: '2024-01-14', channel: 'Mobile' },
+            { id: 'TXN-003', customer: 'Michael Brown', amount: 2100.00, status: 'active', date: '2024-01-13', channel: 'API' },
+            { id: 'TXN-004', customer: 'Sarah Davis', amount: 675.50, status: 'inactive', date: '2024-01-12', channel: 'Web' },
+            { id: 'TXN-005', customer: 'David Wilson', amount: 1890.25, status: 'active', date: '2024-01-11', channel: 'Mobile' },
+            { id: 'TXN-006', customer: 'Lisa Anderson', amount: 430.00, status: 'pending', date: '2024-01-10', channel: 'Web' },
+            { id: 'TXN-007', customer: 'Robert Taylor', amount: 3200.00, status: 'active', date: '2024-01-09', channel: 'API' },
+            { id: 'TXN-008', customer: 'Jennifer Lee', amount: 950.75, status: 'active', date: '2024-01-08', channel: 'Mobile' }
+        ];
+
+        // Initialize dashboard
+        let currentData = [...sampleTransactions];
+        let revenueChart;
+
+        // Initialize charts
+        function initializeCharts() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [65000, 72000, 68000, 85000, 92000, 88000, 94000, 89000, 96000, 102000, 108000, 115000],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }, {
+                        label: 'Projected',
+                        data: [null, null, null, null, null, null, null, null, 96000, 105000, 112000, 120000],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#a1a1aa',
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: '#27272a',
+                                borderColor: '#27272a'
+                            },
+                            ticks: {
+                                color: '#a1a1aa'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#27272a',
+                                borderColor: '#27272a'
+                            },
+                            ticks: {
+                                color: '#a1a1aa',
+                                callback: function(value) {
+                                    return '$' + (value / 1000) + 'K';
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        // Populate table
+        function populateTable(data = currentData) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            data.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 500; color: var(--text-primary);">${transaction.id}</td>
+                    <td>${transaction.customer}</td>
+                    <td style="font-weight: 500; color: var(--accent-green);">$${transaction.amount.toLocaleString()}</td>
+                    <td>
+                        <span class="status-badge status-${transaction.status}">
+                            ${transaction.status}
+                        </span>
+                    </td>
+                    <td>${new Date(transaction.date).toLocaleDateString()}</td>
+                    <td>${transaction.channel}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+
+            function filterData() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const statusFilter = document.getElementById('statusFilter').value;
+
+                let filteredData = sampleTransactions.filter(transaction => {
+                    const matchesSearch = transaction.customer.toLowerCase().includes(searchTerm) ||
+                                        transaction.id.toLowerCase().includes(searchTerm);
+                    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
+                    
+                    return matchesSearch && matchesStatus;
+                });
+
+                populateTable(filteredData);
+            }
+
+            searchInput.addEventListener('input', filterData);
+            statusFilter.addEventListener('change', filterData);
+        }
+
+        // Animate statistics
+        function animateStats() {
+            const stats = [
+                { id: 'totalUsers', target: 24563, prefix: '', suffix: '' },
+                { id: 'totalRevenue', target: 89432, prefix: '$', suffix: '' },
+                { id: 'avgSessionTime', target: 4.2, prefix: '', suffix: 'm' },
+                { id: 'conversionRate', target: 3.8, prefix: '', suffix: '%' }
+            ];
+
+            stats.forEach(stat => {
+                const element = document.getElementById(stat.id);
+                let current = 0;
+                const increment = stat.target / 100;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= stat.target) {
+                        current = stat.target;
+                        clearInterval(timer);
+                    }
+                    
+                    let displayValue;
+                    if (stat.id === 'totalRevenue') {
+                        displayValue = stat.prefix + Math.floor(current).toLocaleString() + stat.suffix;
+                    } else if (stat.id === 'avgSessionTime' || stat.id === 'conversionRate') {
+                        displayValue = stat.prefix + current.toFixed(1) + stat.suffix;
+                    } else {
+                        displayValue = stat.prefix + Math.floor(current).toLocaleString() + stat.suffix;
+                    }
+                    
+                    element.textContent = displayValue;
+                }, 20);
+            });
+        }
+
+        // Refresh data function
+        function refreshData() {
+            // Simulate data refresh
+            const refreshBtn = document.querySelector('.refresh-btn');
+            refreshBtn.innerHTML = '⟳ Refreshing...';
+            refreshBtn.disabled = true;
+
+            setTimeout(() => {
+                // Update stats with new random data
+                const stats = document.querySelectorAll('.stat-value');
+                stats.forEach(stat => {
+                    // Add some random variation
+                    const currentText = stat.textContent;
+                    // In a real app, this would fetch new data from an API
+                });
+
+                // Update chart with new data
+                if (revenueChart) {
+                    revenueChart.data.datasets[0].data = revenueChart.data.datasets[0].data.map(value => 
+                        value + (Math.random() - 0.5) * 10000
+                    );
+                    revenueChart.update();
+                }
+
+                refreshBtn.innerHTML = '🔄 Refresh';
+                refreshBtn.disabled = false;
+            }, 1500);
+        }
+
+        // Real-time data simulation
+        function simulateRealTimeData() {
+            setInterval(() => {
+                // Update progress bars with small random changes
+                const progressBars = document.querySelectorAll('.progress-fill');
+                progressBars.forEach(bar => {
+                    const currentWidth = parseFloat(bar.style.width);
+                    const newWidth = Math.max(5, Math.min(95, currentWidth + (Math.random() - 0.5) * 5));
+                    bar.style.width = newWidth + '%';
+                    
+                    // Update corresponding value
+                    const valueElement = bar.parentNode.parentNode.querySelector('.progress-value');
+                    valueElement.textContent = Math.round(newWidth) + '%';
+                });
+            }, 5000);
+        }
+
+        // Initialize dashboard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            populateTable();
+            setupSearch();
+            animateStats();
+            simulateRealTimeData();
+        });
+
+        // Responsive chart resize
+        window.addEventListener('resize', function() {
+            if (revenueChart) {
+                revenueChart.resize();
+            }
+        });
+    </script>
+</body>
+</html>
